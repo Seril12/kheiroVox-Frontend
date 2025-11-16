@@ -1,0 +1,222 @@
+<div class="text-to-sign-container">
+  <!-- Header -->
+  <div class="header">
+    <h1>KheiroVox - Text to Sign Language</h1>
+    <p class="subtitle">Choose a scenario and watch it translated into sign language animation</p>
+  </div>
+
+  <!-- Scenario Selection Cards -->
+  <div class="scenario-selector">
+    <h2 class="scenario-title">📋 Choose Your Scenario</h2>
+    <div class="scenario-grid">
+      <div
+        *ngFor="let scenario of scenarios"
+        class="scenario-card"
+        [class.active]="selectedScenario === scenario.id"
+        [class.priority]="scenario.isPriority"
+        [style.border-color]="selectedScenario === scenario.id ? scenario.color : '#4a5568'"
+        (click)="selectScenario(scenario.id)">
+        <div class="scenario-icon">{{ scenario.icon }}</div>
+        <h3 class="scenario-name">{{ scenario.name }}</h3>
+        <p class="scenario-description">{{ scenario.description }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Emergency Mode Selector -->
+  <div *ngIf="showPanicButton" class="emergency-mode-selector">
+    <h3 class="mode-title">⚡ Choose Emergency Mode:</h3>
+    <div class="mode-buttons">
+      <button class="mode-btn" [class.active]="emergencyMode === 'loud'" (click)="setEmergencyMode('loud')">
+        <span class="mode-icon">🔊</span>
+        <span class="mode-name">LOUD PANIC</span>
+        <ul class="mode-features">
+          <li>🔴 Screen flash</li>
+          <li>📢 Loud alert sound</li>
+          <li>🚨 Emergency beeps</li>
+          <li>📍 GPS location</li>
+        </ul>
+      </button>
+      <button class="mode-btn" [class.active]="emergencyMode === 'silent'" (click)="setEmergencyMode('silent')">
+        <span class="mode-icon">🤫</span>
+        <span class="mode-name">SILENT ALERT</span>
+        <ul class="mode-features">
+          <li>📳 Vibrate only</li>
+          <li>🔇 No sound</li>
+          <li>🌑 No flash</li>
+          <li>📍 GPS location</li>
+        </ul>
+      </button>
+    </div>
+  </div>
+
+  <!-- Panic Button -->
+  <div *ngIf="showPanicButton" class="panic-section">
+    <button
+      class="panic-button"
+      [class.active]="isPanicMode"
+      [class.silent]="emergencyMode === 'silent'"
+      (click)="triggerPanicMode()">
+      <span class="panic-icon">{{ emergencyMode === 'loud' ? '🚨' : '🤫' }}</span>
+      <span class="panic-text">{{
+        isPanicMode ? 'ALERT SENT!' : emergencyMode === 'loud' ? 'SEND LOUD PANIC ALERT' : 'SEND SILENT ALERT'
+      }}</span>
+      <span class="panic-icon">{{ emergencyMode === 'loud' ? '🚨' : '🤫' }}</span>
+    </button>
+    <div *ngIf="userLocation" class="location-display">
+      <p class="location-text">📍 Your Location: {{ userLocation }}</p>
+      <button class="copy-location-btn" (click)="copyLocation()">📋 Copy Location</button>
+      <button class="whatsapp-test-btn" (click)="sendWhatsAppAlert()">💬 Test WhatsApp Alert</button>
+    </div>
+    <p class="panic-hint">
+      {{
+        emergencyMode === 'loud'
+          ? '⚠ Will flash screen, play sound, show emergency sign, and open WhatsApp'
+          : '⚠ Will vibrate phone silently and open WhatsApp with emergency message'
+      }}
+    </p>
+  </div>
+
+  <!-- Role Selection (for scenarios with roles) -->
+  <div *ngIf="getSelectedScenario().hasRoles && getSelectedScenario().roles" class="role-selector">
+    <h3 class="role-title">👤 I am:</h3>
+    <div class="role-buttons">
+      <button
+        *ngFor="let role of getSelectedScenario().roles"
+        class="role-btn"
+        [class.active]="selectedRole === role.id"
+        (click)="selectRole(role.id)">
+        <span class="role-icon">{{ role.icon }}</span>
+        <span class="role-name">{{ role.name }}</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Quick Phrases -->
+  <div *ngIf="getCurrentPhrases().length > 0" class="quick-phrases-section">
+    <h3 class="section-title">⚡ Quick Phrases</h3>
+    <div class="quick-phrases-grid">
+      <button *ngFor="let phrase of getCurrentPhrases()" class="quick-phrase-btn" (click)="insertQuickPhrase(phrase)">
+        {{ phrase }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Content Area -->
+  <div class="content-grid">
+    <!-- Left Panel: Text Input -->
+    <div class="input-panel">
+      <div class="panel-header">
+        <label for="textInput">Enter Text</label>
+        <span class="char-count">{{ textInput.value?.length || 0 }} / {{ maxTextLength }}</span>
+      </div>
+
+      <!-- Language Selector -->
+      <div class="language-selector">
+        <label for="spokenLang">From:</label>
+        <select id="spokenLang" [value]="spokenLanguage" (change)="onSpokenLanguageChange($event)">
+          <option *ngFor="let lang of spokenLanguages" [value]="lang.code">{{ lang.name }}</option>
+        </select>
+      </div>
+
+      <!-- Text Input Area -->
+      <textarea
+        id="textInput"
+        [formControl]="textInput"
+        [maxLength]="maxTextLength"
+        placeholder="Click a quick phrase above or type your own message..."
+        rows="6"
+        class="text-input"></textarea>
+
+      <!-- Action Buttons -->
+      <div class="action-buttons">
+        <button
+          class="icon-button voice-input"
+          [class.active]="isListening"
+          (click)="toggleVoiceInput()"
+          [attr.aria-label]="isListening ? 'Stop listening' : 'Voice input'">
+          <span class="icon">{{ isListening ? '⏸' : '🎤' }}</span>
+          <span class="label">{{ isListening ? 'Listening...' : 'Voice Input' }}</span>
+        </button>
+
+        <button
+          class="icon-button text-to-speech"
+          [class.active]="isSpeaking"
+          (click)="speakText()"
+          [disabled]="!textInput.value"
+          [attr.aria-label]="isSpeaking ? 'Stop speaking' : 'Read text aloud'">
+          <span class="icon">{{ isSpeaking ? '🔇' : '🔊' }}</span>
+          <span class="label">{{ isSpeaking ? 'Speaking...' : 'Read Aloud' }}</span>
+        </button>
+      </div>
+
+      <div class="input-hint">💡 Translation happens automatically 1 second after you stop typing</div>
+    </div>
+
+    <!-- Right Panel: Sign Language Output -->
+    <div class="output-panel">
+      <div class="panel-header">
+        <label>Sign Language Animation</label>
+      </div>
+
+      <div class="language-selector">
+        <label for="signedLang">To:</label>
+        <select id="signedLang" [value]="signedLanguage" (change)="onSignedLanguageChange($event)">
+          <option *ngFor="let lang of signedLanguages" [value]="lang.code">{{ lang.name }}</option>
+        </select>
+      </div>
+
+      <div class="sign-output">
+        <div *ngIf="!showOutput" class="placeholder">
+          <div class="placeholder-icon">🤟</div>
+          <p>Sign language animation will appear here</p>
+          <p class="hint">Click a quick phrase or type your own!</p>
+        </div>
+
+        <div *ngIf="showOutput && isLoading" class="loading">
+          <div class="spinner"></div>
+          <p>Generating sign language animation...</p>
+        </div>
+
+        <div *ngIf="showOutput && !isLoading && poseUrl && isPoseViewerLoaded" class="pose-viewer-container">
+          <pose-viewer
+            #poseViewer
+            autoplay="true"
+            loop="true"
+            aspect-ratio="1"
+            [attr.src]="poseUrl"
+            [attr.background]="'#1a202c'"
+            width="100%"></pose-viewer>
+        </div>
+
+        <div *ngIf="showOutput && !isLoading && poseUrl && !isPoseViewerLoaded" class="error-state">
+          <p>⚠ Pose viewer not loaded</p>
+          <p class="small">Run: <code>npm install pose-viewer</code></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Instructions -->
+  <div class="instructions">
+    <h3>🎯 How KheiroVox Works:</h3>
+    <div class="instruction-grid">
+      <div class="instruction-item">
+        <span class="step">1</span>
+        <p>Select your scenario (Emergency, Medical, Social, etc.)</p>
+      </div>
+      <div class="instruction-item">
+        <span class="step">2</span>
+        <p>Choose your role if applicable (Patient/Doctor, Student/Professor)</p>
+      </div>
+      <div class="instruction-item">
+        <span class="step">3</span>
+        <p>Click a quick phrase or type your own message</p>
+      </div>
+      <div class="instruction-item">
+        <span class="step">4</span>
+        <p>Watch the animated skeleton perform the signs!</p>
+      </div>
+    </div>
+  </div>
+</div>
