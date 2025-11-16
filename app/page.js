@@ -7,7 +7,7 @@ export default function Home() {
 
   const handleNavigation = (path) => {
     if (path === 'text-to-sign') {
-      window.location.href = 'http://localhost:4200/my-new-page';
+      window.location.href = 'https://sign-translate-66d69.web.app';
     } else {
       window.location.href = '/sign-to-text';
     }
