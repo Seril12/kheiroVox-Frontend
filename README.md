@@ -1,3 +1,10 @@
+License & Credits
+This project is inspired by sign.mt translate by Nagish.
+All modifications in this repository were made by Seril Evanjaline for academic and hackathon purposes.
+
+License: Non-commercial use only.
+Do not copy, distribute, or use for commercial purposes without permission from the original author.
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
